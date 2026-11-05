@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>存单管家 · 存款与账户管理</title>
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --ink:#16213d;
+    --ink-2:#5b6684;
+    --ink-3:#929cb5;
+    --line:#e7ebf5;
+    --brand:#2f6bff;
+    --brand-soft:#eaf1ff;
+    --green:#12b886;
+    --red:#f0544f;
+    --amber:#f5a524;
+    --shadow:0 4px 18px rgba(30,48,92,.07);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.5;padding-bottom:96px;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px;}
+
+  /* 顶部 */
+  header{
+    background:linear-gradient(150deg,#2f6bff 0%,#1d3fb8 55%,#16296e 100%);
+    color:#fff;padding:24px 0 70px;border-radius:0 0 26px 26px;
+    position:relative;overflow:hidden;
+  }
+  header::after{
+    content:"";position:absolute;width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,.07);right:-70px;top:-90px;
+  }
+  .hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .hd-title{font-size:17px;font-weight:700;letter-spacing:.5px;}
+  .hd-sub{font-size:12px;opacity:.72;margin-top:2px;}
+  .hd-icon{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:19px;}
+  .total-label{font-size:12.5px;opacity:.75;letter-spacing:.4px;}
+  .total-num{font-size:35px;font-weight:700;letter-spacing:-.5px;margin:6px 0 2px;font-variant-numeric:tabular-nums;}
+  .total-num small{font-size:16px;font-weight:600;margin-right:4px;opacity:.9;}
+  .total-extra{display:flex;flex-wrap:wrap;gap:5px 14px;font-size:12px;opacity:.85;margin-top:9px;}
+  .total-extra b{font-weight:650;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-50px;position:relative;z-index:2;}
+  .stat{background:var(--card);border-radius:14px;padding:12px 8px;box-shadow:var(--shadow);text-align:center;}
+  .stat .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .stat .k{font-size:11px;color:var(--ink-3);margin-top:2px;}
+
+  /* Tab */
+  .tabs{
+    position:sticky;top:0;z-index:15;background:rgba(244,246,251,.94);
+    backdrop-filter:blur(8px);display:flex;gap:6px;padding:12px 16px 10px;max-width:520px;margin:0 auto;
+  }
+  .tab{
+    flex:1;border:none;background:transparent;color:var(--ink-2);font-size:13.5px;font-weight:600;
+    padding:9px 0;border-radius:11px;cursor:pointer;font-family:inherit;transition:.18s;
+  }
+  .tab.on{background:#fff;color:var(--brand);box-shadow:var(--shadow);}
+
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:20px 0 11px;}
+  .section-head h2{font-size:15px;margin:0;font-weight:700;}
+  .section-head .hint{font-size:12px;color:var(--ink-3);}
+  .link-btn{border:none;background:none;color:var(--brand);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px;}
+
+  .filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none;}
+  .filters::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--ink-2);padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer;font-family:inherit;transition:.18s;}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .list{display:flex;flex-direction:column;gap:12px;}
+
+  /* 存单卡片 */
+  .cd{background:var(--card);border-radius:var(--radius);padding:15px 15px 13px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .18s;}
+  .cd:active{transform:scale(.99);}
+  .cd::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand);}
+  .cd.done::before{background:var(--ink-3);}
+  .cd.urgent::before{background:var(--amber);}
+  .cd.mature::before{background:var(--green);}
+
+  .cd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .bank-name{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .logo{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700;flex:0 0 auto;}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:600;background:var(--brand-soft);color:var(--brand);white-space:nowrap;}
+  .tag.g{background:#e7f8f2;color:var(--green);}
+  .tag.a{background:#fef3e0;color:#c47c00;}
+  .tag.k{background:#eef0f6;color:var(--ink-3);}
+
+  .amount{font-size:24px;font-weight:700;letter-spacing:-.4px;margin:9px 0 1px;font-variant-numeric:tabular-nums;}
+  .amount small{font-size:14px;font-weight:600;opacity:.65;margin-right:3px;}
+  .amount .rate{font-size:12.5px;font-weight:600;color:var(--red);background:#fdeceb;padding:2px 7px;border-radius:6px;margin-left:8px;vertical-align:3px;}
+
+  .meta{display:flex;gap:12px;font-size:12px;color:var(--ink-3);flex-wrap:wrap;margin-top:3px;}
+  .meta b{color:var(--ink-2);font-weight:600;}
+  .acct-link{display:inline-flex;align-items:center;gap:4px;background:#f5f7fc;border-radius:6px;padding:1px 6px;color:var(--ink-2);font-size:11.5px;}
+
+  .bar-wrap{margin-top:13px;}
+  .bar-track{height:9px;background:#eef1f8;border-radius:999px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#4f8bff,#2f6bff);transition:width .5s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;}
+  .bar-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shine 2.4s infinite;}
+  @keyframes shine{0%{transform:translateX(-100%)}60%,100%{transform:translateX(200%)}}
+  .cd.urgent .bar-fill{background:linear-gradient(90deg,#ffc453,#f5a524);}
+  .cd.mature .bar-fill{background:linear-gradient(90deg,#2fd39f,#12b886);}
+  .cd.done .bar-fill{background:#cfd5e4;}
+  .cd.done .bar-fill::after{display:none;}
+
+  .bar-info{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-top:6px;gap:8px;}
+  .bar-info .count{font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cd.urgent .bar-info .count{color:#c47c00;}
+  .cd.mature .bar-info .count{color:var(--green);}
+
+  .cd-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--ink-3);gap:8px;}
+  .interest{font-weight:600;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;}
+  .interest b{color:var(--red);font-variant-numeric:tabular-nums;}
+
+  .acts{display:flex;gap:6px;flex:0 0 auto;}
+  .act{border:none;background:#f3f5fa;color:var(--ink-2);border-radius:8px;padding:5px 10px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:.15s;}
+  .act:hover{background:#e7ebf6;color:var(--ink);}
+  .act.del:hover{background:#fdeceb;color:var(--red);}
+
+  .empty{background:#fff;border-radius:var(--radius);padding:40px 20px;text-align:center;box-shadow:var(--shadow);color:var(--ink-3);font-size:13.5px;line-height:1.8;}
+  .empty .big{font-size:38px;margin-bottom:8px;opacity:.5;}
+
+  /* 日历 */
+  .cal-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 12px 8px;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px;}
+  .cal-title{font-size:15.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .cal-nav-btns{display:flex;gap:6px;align-items:center;}
+  .nav-b{border:none;background:#f3f5fa;color:var(--ink-2);width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:14px;font-family:inherit;line-height:1;}
+  .nav-b:active{background:#e7ebf6;}
+  .today-b{border:none;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:600;padding:6px 10px;border-radius:9px;cursor:pointer;font-family:inherit;}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--ink-3);margin-bottom:4px;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .day{
+    position:relative;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:10px;font-size:13px;cursor:pointer;color:var(--ink);transition:.15s;gap:1px;
+    font-variant-numeric:tabular-nums;
+  }
+  .day.blank{cursor:default;color:transparent;}
+  .day:hover{background:#f6f8fd;}
+  .day.other{color:var(--ink-3);opacity:.4;cursor:default;}
+  .day.today{background:var(--brand-soft);font-weight:700;color:var(--brand);}
+  .day.has-dot::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--brand);position:absolute;bottom:5px;}
+  .day.has-dot.mat::after{background:var(--green);}
+  .day.sel{background:var(--ink);color:#fff !important;font-weight:700;}
+  .day.sel::after{background:#fff !important;}
+  .day .d-amt{font-size:8px;line-height:1;color:var(--green);font-weight:700;letter-spacing:-.2px;}
+  .day.sel .d-amt{color:#9ef0d2;}
+
+  .cal-legend{display:flex;gap:12px;justify-content:center;font-size:10.5px;color:var(--ink-3);padding:10px 0 6px;flex-wrap:wrap;}
+  .cal-legend i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--brand);margin-right:4px;vertical-align:1px;}
+  .cal-legend i.g{background:var(--green);}
+
+  .month-sum{margin-top:12px;}
+  .ms-row{display:flex;justify-content:space-between;padding:11px 14px;background:#fff;border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px;font-size:13px;}
+  .ms-row b{font-variant-numeric:tabular-nums;}
+  .ms-row .m{color:var(--ink-2);}
+
+  .day-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:6px 14px;margin-top:12px;}
+  .dp-title{font-size:13px;font-weight:700;padding:10px 0 8px;color:var(--ink);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;}
+  .dp-title span{color:var(--ink-3);font-weight:500;font-size:11.5px;text-align:right;}
+  .dp-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f2f4f9;font-size:13px;gap:10px;}
+  .dp-item:last-child{border-bottom:none;}
+  .dp-item .l{display:flex;align-items:center;gap:7px;min-width:0;}
+  .dp-item .r{text-align:right;flex:0 0 auto;}
+  .dp-item .r b{font-variant-numeric:tabular-nums;font-size:13.5px;}
+  .dp-item .r .s{font-size:10.5px;color:var(--ink-3);margin-top:1px;}
+
+  /* 账户 */
+  .acct{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:15px;position:relative;overflow:hidden;}
+  .acct::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand);}
+  .acct-head{display:flex;align-items:center;gap:9px;}
+  .acct-name{font-size:14.5px;font-weight:700;flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .acct-total{font-size:23px;font-weight:700;margin:10px 0 0;font-variant-numeric:tabular-nums;letter-spacing:-.4px;}
+  .acct-total small{font-size:13px;font-weight:600;opacity:.6;margin-right:3px;}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .sp-box{background:#f7f9fd;border-radius:11px;padding:9px 11px;}
+  .sp-box .k{font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:4px;}
+  .sp-box .v{font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .acct-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--ink-3);gap:8px;}
+  .mini-acts{display:flex;gap:6px;flex:0 0 auto;}
+
+  /* 浮动按钮 */
+  .fab{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:22px;
+    width:calc(100% - 48px);max-width:472px;background:var(--brand);color:#fff;border:none;border-radius:15px;
+    padding:15px;font-size:15.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(47,107,255,.35);
+    font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;z-index:20;
+  }
+  .fab:active{transform:translateX(-50%) scale(.98);}
+
+  /* 弹窗 */
+  .mask{position:fixed;inset:0;background:rgba(16,24,48,.5);z-index:50;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
+  .mask.show{display:flex;}
+  .sheet{
+    background:#fff;width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:6px 18px 26px;
+    max-height:92vh;overflow-y:auto;animation:up .26s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center;padding:14px 0 16px;position:sticky;top:0;background:#fff;z-index:2;}
+  .sheet-head h3{margin:0;font-size:16.5px;font-weight:700;}
+  .close{width:30px;height:30px;border-radius:50%;border:none;background:#f1f3f9;color:var(--ink-2);font-size:15px;cursor:pointer;line-height:1;font-family:inherit;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px;font-weight:600;}
+  .field input,.field select{
+    width:100%;border:1.5px solid var(--line);border-radius:11px;padding:12px 13px;font-size:15px;
+    font-family:inherit;color:var(--ink);background:#fbfcfe;outline:none;transition:.18s;
+  }
+  .field input:focus,.field select:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px rgba(47,107,255,.1);}
+  .field input:disabled{background:#f3f5fa;color:var(--ink-3);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .unit{position:relative;}
+  .unit input{padding-right:34px;}
+  .unit span{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-3);}
+  .preview{background:var(--brand-soft);border-radius:11px;padding:11px 13px;font-size:12.5px;color:#274c9e;margin-bottom:14px;line-height:1.7;}
+  .preview b{font-weight:700;}
+  .save{width:100%;background:var(--brand);color:#fff;border:none;border-radius:13px;padding:15px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+  .save:active{opacity:.9;}
+  .save.ghost{background:#f3f5fa;color:var(--ink-2);}
+  .row-btns{display:flex;gap:10px;}
+  .row-btns .save{flex:1;}
+  .tip{font-size:11.5px;color:var(--ink-3);line-height:1.7;margin-top:-6px;margin-bottom:12px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);
+    background:rgba(22,33,61,.94);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;
+    z-index:99;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;max-width:90vw;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .hidden{display:none !important;}
+  @media (max-width:360px){
+    .total-num{font-size:30px;}
+    .amount{font-size:21px;}
+    .day{font-size:12px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hd-top">
+      <div>
+        <div class="hd-title">存单管家</div>
+        <div class="hd-sub">存单 · 日历 · 银行账户</div>
+      </div>
+      <div class="hd-icon">🏦</div>
+    </div>
+    <div class="total-label">资产合计（活期 + 存单本金）</div>
+    <div class="total-num"><small>¥</small><span id="totalAssets">0.00</span></div>
+    <div class="total-extra">
+      <span>活期 <b id="totalCurrent">¥0</b></span>
+      <span>存单本金 <b id="totalPrincipal">¥0</b></span>
+      <span>利息合计 <b id="totalInt">¥0</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><div class="v" id="cntAll" style="color:var(--brand)">0</div><div class="k">存单总数</div></div>
+    <div class="stat"><div class="v" id="cntActive" style="color:var(--amber)">0</div><div class="k">存续中</div></div>
+    <div class="stat"><div class="v" id="avgRate" style="color:var(--red)">0%</div><div class="k">加权年利率</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" data-t="list">存单</button>
+  <button class="tab" data-t="cal">日历</button>
+  <button class="tab" data-t="acct">账户</button>
+</div>
+
+<!-- ========== 存单页 ========== -->
+<div class="wrap" id="page-list">
+  <div class="section-head">
+    <h2>我的存单</h2>
+    <div class="hint">按到期日排序</div>
+  </div>
+  <div class="filters" id="filters">
+    <button class="chip on" data-f="all">全部</button>
+    <button class="chip" data-f="active">存续中</button>
+    <button class="chip" data-f="urgent">即将到期</button>
+    <button class="chip" data-f="done">已到期</button>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<!-- ========== 日历页 ========== -->
+<div class="wrap hidden" id="page-cal">
+  <div class="section-head">
+    <h2>到期日历</h2>
+    <div class="hint" id="calHint">点日期看当天明细</div>
+  </div>
+
+  <div class="cal-card">
+    <div class="cal-nav">
+      <div class="cal-title" id="calTitle">2026年11月</div>
+      <div class="cal-nav-btns">
+        <button class="nav-b" id="prevM">‹</button>
+        <button class="today-b" id="todayBtn">今天</button>
+        <button class="nav-b" id="nextM">›</button>
+      </div>
+    </div>
+    <div class="week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="days" id="days"></div>
+    <div class="cal-legend">
+      <span><i></i>存续中到期</span>
+      <span><i class="g"></i>已到账</span>
+      <span>小字为当日到期本息</span>
+    </div>
+    <div class="month-sum" id="monthSum"></div>
+  </div>
+
+  <div class="day-panel" id="dayPanel"></div>
+
+  <div class="section-head"><h2>按月汇总</h2><div class="hint">未来 12 个月到期</div></div>
+  <div id="monthList"></div>
+</div>
+
+<!-- ========== 账户页 ========== -->
+<div class="wrap hidden" id="page-acct">
+  <div class="section-head">
+    <h2>银行账户</h2>
+    <button class="link-btn" id="addAcctBtn">＋ 添加账户</button>
+  </div>
+  <div class="list" id="acctList"></div>
+  <div class="section-head"><h2>近期资金流水</h2><div class="hint">转账 / 到期入账</div></div>
+  <div class="day-panel" id="txList" style="margin-top:0"></div>
+</div>
+
+<button class="fab" id="fabBtn">＋ 添加存单</button>
+
+<!-- ========== 存单表单 ========== -->
+<div class="mask" id="maskCd">
+  <div class="sheet">
+    <div class="sheet-head"><h3 id="cdTitle">添加存单</h3><button class="close" data-close="maskCd">✕</button></div>
+
+    <div class="field">
+      <label>银行名称</label>
+      <input id="fBank" list="bankList" placeholder="如：工商银行、招商银行" autocomplete="off">
+      <datalist id="bankList">
+        <option>工商银行</option><option>建设银行</option><option>农业银行</option>
+        <option>中国银行</option><option>交通银行</option><option>邮储银行</option>
+        <option>招商银行</option><option>中信银行</option><option>浦发银行</option>
+        <option>民生银行</option><option>兴业银行</option><option>光大银行</option>
+        <option>平安银行</option><option>华夏银行</option><option>广发银行</option>
+        <option>北京银行</option><option>上海银行</option><option>宁波银行</option>
+        <option>农村商业银行</option><option>网商银行</option><option>微众银行</option>
+      </datalist>
+    </div>
+
+    <div class="field">
+      <label>归属银行账户（到期本息自动转入该账户活期）</label>
+      <select id="fAcct"></select>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>存款本金</label>
+        <div class="unit"><input id="fAmt" type="number" inputmode="decimal" placeholder="0.00"><span>元</span></div>
+      </div>
+      <div class="field">
+        <label>年利率</label>
+        <div class="unit"><input id="fRate" type="number" inputmode="decimal" step="0.01" placeholder="如 2.75"><span>%</span></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>存期</label>
+        <select id="fTerm">
+          <option value="3">3 个月</option>
+          <option value="6">6 个月</option>
+          <option value="12" selected>1 年</option>
+          <option value="24">2 年</option>
+          <option value="36">3 年</option>
+          <option value="60">5 年</option>
+          <option value="0">自定义到期日</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>存入日期</label>
+        <input id="fStart" type="date">
+      </div>
+    </div>
+
+    <div class="field hidden" id="endField">
+      <label>到期日期</label>
+      <input id="fEnd" type="date">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>存单类型</label>
+        <select id="fType">
+          <option value="定期存款">定期存款</option>
+          <option value="大额存单">大额存单</option>
+          <option value="整存整取">整存整取</option>
+          <option value="结构性存款">结构性存款</option>
+          <option value="通知存款">通知存款</option>
+          <option value="储蓄国债">储蓄国债</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>备注（选填）</label>
+        <input id="fNote" placeholder="尾号 8821 等">
+      </div>
+    </div>
+
+    <div class="preview" id="cdPreview">填写金额与利率后，自动计算到期利息</div>
+    <button class="save" id="saveCdBtn">保存存单</button>
+  </div>
+</div>
+
+<!-- ========== 账户表单 ========== -->
+<div class="mask" id="maskAcct">
+  <div class="sheet">
+    <div class="sheet-head"><h3 id="acctTitle">添加银行账户</h3><button class="close" data-close="maskAcct">✕</button></div>
+    <div class="field">
+      <label>账户名称</label>
+      <input id="aName" placeholder="如：招商银行工资卡">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>所属银行</label>
+        <input id="aBank" list="bankList" placeholder="招商银行" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>卡号后四位（选填）</label>
+        <input id="aNo" maxlength="8" placeholder="8821">
+      </div>
+    </div>
+    <div class="field">
+      <label>活期余额</label>
+      <div class="unit"><input id="aBal" type="number" inputmode="decimal" placeholder="0.00"><span>元</span></div>
+    </div>
+    <div class="tip">账户建立后，该账户下的存单到期时，本金 + 利息会自动转入这个账户的活期余额。</div>
+    <div class="row-btns">
+      <button class="save ghost hidden" id="delAcctBtn">删除</button>
+      <button class="save" id="saveAcctBtn">保存账户</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 转账表单 ========== -->
+<div class="mask" id="maskTx">
+  <div class="sheet">
+    <div class="sheet-head"><h3>活期转账</h3><button class="close" data-close="maskTx">✕</button></div>
+    <div class="field">
+      <label>转出账户</label>
+      <select id="tFrom"></select>
+    </div>
+    <div class="field">
+      <label>转入账户</label>
+      <select id="tTo"></select>
+    </div>
+    <div class="field">
+      <label>转账金额</label>
+      <div class="unit"><input id="tAmt" type="number" inputmode="decimal" placeholder="0.00"><span>元</span></div>
+    </div>
+    <div class="field">
+      <label>备注（选填）</label>
+      <input id="tNote" placeholder="如：资金归集">
+    </div>
+    <div class="preview" id="txPreview">选择账户并填写金额</div>
+    <button class="save" id="saveTxBtn">确认转账</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var KEY_V1 = 'cd_manager_v1';
+  var KEY = 'cd_manager_v2';
+  var DAY = 86400000;
+
+  var state = {
+    accounts: [],
+    deposits: [],
+    transfers: [],
+    filter: 'all',
+    tab: 'list',
+    editingCd: null,
+    editingAcct: null,
+    calYear: 0,
+    calMonth: 0,
+    selDate: null
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+  function uid(p){ return (p||'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function today(){
+    var d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function parseDate(s){
+    if(!s) return null;
+    var p = String(s).split('-');
+    if(p.length < 3) return null;
+    return new Date(+p[0], +p[1]-1, +p[2]);
+  }
+  function fmtDate(d){
+    if(!d || isNaN(d.getTime())) return '—';
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function addMonths(d, m){
+    var y = d.getFullYear(), mo = d.getMonth() + m, day = d.getDate();
+    var nd = new Date(y, mo, 1);
+    var last = new Date(nd.getFullYear(), nd.getMonth()+1, 0).getDate();
+    nd.setDate(Math.min(day, last));
+    return nd;
+  }
+  function daysBetween(a, b){ return Math.round((b - a) / DAY); }
+  function money(n){
+    return Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function moneyInt(n){
+    return Math.round(Number(n)||0).toLocaleString('zh-CN');
+  }
+  function moneyShort(n){
+    n = Number(n||0);
+    var a = Math.abs(n);
+    if(a >= 100000000) return (n/100000000).toFixed(2).replace(/\.?0+$/,'') + '亿';
+    if(a >= 10000) return (n/10000).toFixed(2).replace(/\.?0+$/,'') + '万';
+    return moneyInt(n);
+  }
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+  function toast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  }
+
+  function brandColor(name){
+    var s = 0, str = String(name||'银');
+    for(var i=0;i<str.length;i++) s = (s*31 + str.charCodeAt(i)) % 360;
+    return 'hsl(' + s + ',50%,45%)';
+  }
+  function bankLetter(name){
+    var s = String(name||'银').replace(/银行|储蓄|存款|农商|信用社/g,'').trim();
+    return s.slice(0,1) || '银';
+  }
+
+  /* ================= 数据 ================= */
+  function load(){
+    var raw = null;
+    try{ raw = localStorage.getItem(KEY); }catch(e){}
+    if(raw){
+      try{
+        var d = JSON.parse(raw);
+        state.accounts = d.accounts || [];
+        state.deposits = d.deposits || [];
+        state.transfers = d.transfers || [];
+      }catch(e){}
+    }
+    if(!state.accounts.length && !state.deposits.length) migrate();
+    if(!state.accounts.length) seedAccounts();
+    save();
+  }
+
+  // 从旧版（v1）迁移，避免已录入的存单丢失
+  function migrate(){
+    var old = null;
+    try{ old = JSON.parse(localStorage.getItem(KEY_V1) || 'null'); }catch(e){}
+    var list = Array.isArray(old) ? old : ((old && old.list) || []);
+    if(!list.length){ seedDemo(); return; }
+
+    var mapByName = {};
+    list.forEach(function(it){
+      var bk = it.bank || '未分类';
+      if(!mapByName[bk]){
+        var a = { id: uid('acct'), name: bk, bank: bk, no:'', balance: 0 };
+        mapByName[bk] = a;
+        state.accounts.push(a);
+      }
+      state.deposits.push({
+        id: it.id || uid('cd'),
+        bank: it.bank || '未分类',
+        accountId: mapByName[bk].id,
+        amount: Number(it.amount) || 0,
+        rate: Number(it.rate) || 0,
+        start: it.start,
+        end: it.end,
+        termMonths: guessTerm(it.start, it.end),
+        type: it.type || '定期存款',
+        note: it.note || '',
+        settled: false
+      });
+    });
+  }
+
+  function guessTerm(s, e){
+    var a = parseDate(s), b = parseDate(e);
+    if(!a || !b) return 12;
+    var m = (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth());
+    return m > 0 ? m : 12;
+  }
+
+  function seedAccounts(){
+    state.accounts.push({ id: uid('acct'), name:'招商银行', bank:'招商银行', no:'', balance: 0 });
+  }
+
+  function seedDemo(){
+    var acct = { id: uid('acct'), name:'招商银行', bank:'招商银行', no:'8821', balance: 12500 };
+    state.accounts.push(acct);
+    var t = today();
+    var s1 = addMonths(t, -7);
+    var s2 = addMonths(t, -11);
+    state.deposits.push({
+      id: uid('cd'), bank:'招商银行', accountId: acct.id, amount: 100000, rate: 2.15,
+      start: fmtDate(s1), end: fmtDate(addMonths(s1, 12)), termMonths: 12,
+      type:'定期存款', note:'示例存单', settled:false
+    });
+    state.deposits.push({
+      id: uid('cd'), bank:'工商银行', accountId: acct.id, amount: 50000, rate: 1.85,
+      start: fmtDate(s2), end: fmtDate(addMonths(s2, 12)), termMonths: 12,
+      type:'大额存单', note:'下月到期示例', settled:false
+    });
+  }
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({
+      accounts: state.accounts, deposits: state.deposits, transfers: state.transfers
+    })); }catch(e){}
+  }
+
+  function getAcct(id){
+    for(var i=0;i<state.accounts.length;i++) if(state.accounts[i].id === id) return state.accounts[i];
+    return null;
+  }
+
+  /* ================= 核心计算 =================
+     利息 = 本金 × 年利率 × 存期(年)
+     存期(年) = 存期月数 ÷ 12
+  */
+  function compute(item){
+    var start = parseDate(item.start) || today();
+    var end = parseDate(item.end) || start;
+    var now = today();
+    var months = Number(item.termMonths) || guessTerm(item.start, item.end);
+
+    var totalDays = daysBetween(start, end) || 1;
+    var passed = daysBetween(start, now);
+    var progress = Math.max(0, Math.min(1, passed / totalDays));
+    var leftDays = daysBetween(now, end);
+
+    var amt = Number(item.amount) || 0;
+    var rate = Number(item.rate) || 0;
+    var interest = amt * (rate/100) * (months/12);
+
+    return {
+      data: item, start: start, end: end,
+      totalDays: totalDays, passed: Math.max(0, passed),
+      progress: progress, leftDays: leftDays, months: months,
+      interest: interest,
+      matures: amt + interest,
+      matured: leftDays <= 0,
+      urgent: leftDays > 0 && leftDays <= 30
+    };
+  }
+
+  /* ================= 总览 ================= */
+  function accountStats(){
+    var st = {};
+    state.accounts.forEach(function(a){
+      st[a.id] = { balance: Number(a.balance)||0, deposit: 0, cnt: 0, acct: a };
+    });
+    state.deposits.forEach(function(d){
+      var s = st[d.accountId];
+      if(!s) return;
+      s.deposit += Number(d.amount)||0;
+      s.cnt += 1;
+    });
+    return st;
+  }
+
+  function renderSummary(){
+    var st = accountStats();
+    var current = 0, principal = 0, interest = 0, active = 0, weighted = 0;
+
+    Object.keys(st).forEach(function(k){ current += st[k].balance; });
+
+    state.deposits.forEach(function(d){
+      var c = compute(d);
+      principal += Number(d.amount)||0;
+      interest += c.interest;
+      weighted += (Number(d.amount)||0) * (Number(d.rate)||0);
+      if(!c.matured) active++;
+    });
+
+    $('totalAssets').textContent = money(current + principal);
+    $('totalCurrent').textContent = '¥' + moneyShort(current);
+    $('totalPrincipal').textContent = '¥' + moneyShort(principal);
+    $('totalInt').textContent = '¥' + moneyShort(interest);
+    $('cntAll').textContent = state.deposits.length;
+    $('cntActive').textContent = active;
+    $('avgRate').textContent = (principal > 0 ? weighted/principal : 0).toFixed(2) + '%';
+  }
+
+  /* ================= 存单列表 ================= */
+  function termText(months){
+    months = Number(months) || 12;
+    if(months % 12 === 0) return (months/12) + ' 年';
+    return months + ' 个月';
+  }
+
+  function renderList(){
+    var all = state.deposits.map(compute);
+    var view = all.filter(function(c){
+      if(state.filter === 'active') return !c.matured;
+      if(state.filter === 'done') return c.matured;
+      if(state.filter === 'urgent') return c.urgent;
+      return true;
+    });
+    view.sort(function(a,b){
+      if(a.matured !== b.matured) return a.matured ? 1 : -1;
+      if(a.matured) return b.end - a.end;
+      return a.end - b.end;
+    });
+
+    var box = $('list');
+    if(!view.length){
+      box.innerHTML = '<div class="empty"><div class="big">🗂️</div>' +
+        (all.length ? '该分类下暂无存单' : '还没有存单记录<br>点击下方「添加存单」开始记账') + '</div>';
+      return;
+    }
+
+    var html = '';
+    view.forEach(function(c){
+      var it = c.data;
+      var acct = getAcct(it.accountId);
+      var acctName = acct ? acct.name : '未指定账户';
+      var cls = c.matured ? 'done' : (c.urgent ? 'urgent' : '');
+      var tagCls = c.matured ? 'k' : (c.urgent ? 'a' : '');
+      var tagTxt = c.matured ? (it.settled ? '已到账' : '已到期') : (c.urgent ? '即将到期' : '存续中');
+      var pct = (c.progress*100).toFixed(1);
+      var countTxt = c.matured
+        ? (it.settled ? '已转入 ' + acctName : '已到期 · 待入账')
+        : (c.leftDays === 0 ? '今天到期' : '还剩 ' + c.leftDays + ' 天');
+
+      html += '<div class="cd ' + cls + '" data-id="' + it.id + '">' +
+        '<div class="cd-head">' +
+          '<div class="bank-name">' +
+            '<span class="logo" style="background:' + brandColor(it.bank) + '">' + esc(bankLetter(it.bank)) + '</span>' +
+            '<span>' + esc(it.bank) + '</span>' +
+            '<span class="tag ' + tagCls + '">' + tagTxt + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="amount"><small>¥</small>' + money(it.amount).replace(/\.00$/,'') +
+          '<span class="rate">' + (Number(it.rate)||0).toFixed(2) + '%</span></div>' +
+        '<div class="meta">' +
+          '<span>' + esc(it.type || '定期存款') + '</span>' +
+          '<span>存期 <b>' + termText(c.months) + '</b></span>' +
+          '<span>' + fmtDate(c.start) + ' → <b>' + fmtDate(c.end) + '</b></span>' +
+        '</div>' +
+        '<div class="meta" style="margin-top:6px"><span class="acct-link">🏦 ' + esc(acctName) + '</span></div>' +
+        '<div class="bar-wrap">' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="bar-info">' +
+            '<span>已过 ' + Math.max(0,c.passed) + ' / ' + c.totalDays + ' 天 · 进度 ' + pct + '%</span>' +
+            '<span class="count">' + countTxt + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cd-foot">' +
+          '<span class="interest">利息 <b>¥' + money(c.interest) + '</b> · 本息 ¥' + money(c.matures) + '</span>' +
+          '<span class="acts">' +
+            '<button class="act" data-act="edit">编辑</button>' +
+            '<button class="act del" data-act="del">删除</button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    });
+    box.innerHTML = html;
+  }
+
+  /* ================= 日历 ================= */
+  function maturityMap(){
+    var map = {};
+    state.deposits.forEach(function(d){
+      if(!d.end) return;
+      var c = compute(d);
+      if(!map[d.end]) map[d.end] = { items: [], sum: 0 };
+      map[d.end].items.push(c);
+      map[d.end].sum += c.matures;
+    });
+    return map;
+  }
+
+  function renderCalendar(){
+    var y = state.calYear, m = state.calMonth;
+    $('calTitle').textContent = y + '年' + (m+1) + '月';
+
+    var first = new Date(y, m, 1);
+    var startWeek = first.getDay();
+    var daysInMonth = new Date(y, m+1, 0).getDate();
+    var prevDays = new Date(y, m, 0).getDate();
+    var now = today();
+
+    var map = maturityMap();
+    var html = '';
+
+    for(var i = startWeek - 1; i >= 0; i--){
+      html += '<div class="day other">' + (prevDays - i) + '</div>';
+    }
+    var monthSum = 0, monthCnt = 0;
+
+    for(var d = 1; d <= daysInMonth; d++){
+      var ds = y + '-' + pad(m+1) + '-' + pad(d);
+      var info = map[ds];
+      var cls = 'day';
+      var inner = '<span>' + d + '</span>';
+      if(info){
+        cls += ' has-dot';
+        monthSum += info.sum;
+        monthCnt += info.items.length;
+        if(info.items.every(function(x){ return x.data.settled; })) cls += ' mat';
+        inner = '<span>' + d + '</span><span class="d-amt">' + shortAmt(info.sum) + '</span>';
+      }
+      if(now.getFullYear() === y && now.getMonth() === m && now.getDate() === d) cls += ' today';
+      if(state.selDate === ds) cls += ' sel';
+      html += '<div class="' + cls + '" data-d="' + ds + '">' + inner + '</div>';
+    }
+    var rest = (7 - ((startWeek + daysInMonth) % 7)) % 7;
+    for(var k = 1; k <= rest; k++){
+      html += '<div class="day other">' + k + '</div>';
+    }
+    $('days').innerHTML = html;
+
+    $('monthSum').innerHTML =
+      '<div class="ms-row"><span class="m">本月到期 ' + monthCnt + ' 笔</span>' +
+      '<b style="color:var(--green)">¥' + money(monthSum) + '</b></div>';
+
+    renderDayPanel(map);
+    renderMonthList();
+  }
+
+  function shortAmt(n){
+    n = Number(n)||0;
+    if(n >= 10000) return (n/10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/,'') + 'w';
+    if(n <= 0) return '';
+    return Math.round(n).toString();
+  }
+
+  function renderDayPanel(map){
+    var panel = $('dayPanel');
+    if(!state.selDate){
+      var prefix = state.calYear + '-' + pad(state.calMonth+1);
+      var daysWith = Object.keys(map).filter(function(k){ return k.indexOf(prefix) === 0; }).length;
+      panel.innerHTML = '<div class="dp-title">当天到期明细<span>点击日历日期查看</span></div>' +
+        '<div style="padding:18px 0;text-align:center;color:var(--ink-3);font-size:12.5px">' +
+        (daysWith ? '本月共 <b style="color:var(--ink-2)">' + daysWith + '</b> 天有存单到期，点击日期查看是哪一笔' : '本月暂无到期存单，可切换月份查看') +
+        '</div>';
+      return;
+    }
+    var info = map[state.selDate];
+    var dt = parseDate(state.selDate);
+    var head = '<div class="dp-title">' + (dt.getMonth()+1) + '月' + dt.getDate() + '日 到期' +
+      '<span>' + (info ? info.items.length + ' 笔 · 合计 ¥' + money(info.sum) : '无到期') + '</span></div>';
+
+    if(!info){
+      panel.innerHTML = head + '<div style="padding:18px 0;text-align:center;color:var(--ink-3);font-size:12.5px">这一天没有存单到期</div>';
+      return;
+    }
+    var body = '';
+    info.items.forEach(function(c){
+      var it = c.data, acct = getAcct(it.accountId);
+      body += '<div class="dp-item">' +
+        '<div class="l"><span class="logo" style="background:' + brandColor(it.bank) + ';width:22px;height:22px;font-size:11px;border-radius:7px">' +
+          esc(bankLetter(it.bank)) + '</span>' +
+          '<div><div>' + esc(it.bank) + ' · ' + esc(it.type || '定期') + '</div>' +
+          '<div style="font-size:10.5px;color:var(--ink-3)">' + esc(acct ? acct.name : '未指定账户') +
+          (it.settled ? ' · 已到账' : '') + '</div></div></div>' +
+        '<div class="r"><b style="color:var(--green)">¥' + money(c.matures) + '</b>' +
+          '<div class="s">本金 ¥' + moneyInt(it.amount) + ' + 利息 ¥' + moneyInt(c.interest) + '</div></div>' +
+      '</div>';
+    });
+    panel.innerHTML = head + body;
+  }
+
+  function renderMonthList(){
+    var now = today();
+    var startM = new Date(now.getFullYear(), now.getMonth(), 1);
+    var map = maturityMap();
+    var rows = '';
+
+    for(var i = 0; i < 12; i++){
+      var mm = addMonths(startM, i);
+      var ym = mm.getFullYear() + '-' + pad(mm.getMonth()+1);
+      var sum = 0, cnt = 0;
+      Object.keys(map).forEach(function(k){
+        if(k.indexOf(ym) === 0){ sum += map[k].sum; cnt += map[k].items.length; }
+      });
+      rows += '<div class="ms-row" data-ym="' + ym + '" style="cursor:pointer;' + (cnt?'':'opacity:.5') + '">' +
+        '<span class="m">' + mm.getFullYear() + '年' + (mm.getMonth()+1) + '月' +
+          (i === 0 ? ' <span style="color:var(--brand);font-size:10.5px">本月</span>' : '') + '</span>' +
+        '<span><b>' + (cnt ? '¥' + money(sum) : '—') + '</b>' +
+        (cnt ? ' <span style="font-size:11px;color:var(--ink-3)">' + cnt + '笔</span>' : '') + '</span>' +
+      '</div>';
+    }
+    $('monthList').innerHTML = rows;
+  }
+
+  /* ================= 账户 ================= */
+  function renderAccounts(){
+    var st = accountStats();
+    var box = $('acctList');
+
+    if(!state.accounts.length){
+      box.innerHTML = '<div class="empty"><div class="big">🏦</div>还没有银行账户<br>添加账户后即可归类存单与活期资金</div>';
+      renderTx();
+      return;
+    }
+
+    var html = '';
+    state.accounts.forEach(function(a){
+      var s = st[a.id];
+      var total = s.balance + s.deposit;
+      html += '<div class="acct" data-id="' + a.id + '">' +
+        '<div class="acct-head">' +
+          '<span class="logo" style="background:' + brandColor(a.bank || a.name) + '">' + esc(bankLetter(a.bank || a.name)) + '</span>' +
+          '<div class="acct-name">' + esc(a.name) +
+            (a.no ? '<span class="tag k">尾号 ' + esc(a.no) + '</span>' : '') + '</div>' +
+          '<span class="tag">' + s.cnt + ' 张存单</span>' +
+        '</div>' +
+        '<div class="acct-total"><small>¥</small>' + money(total) + '</div>' +
+        '<div class="split">' +
+          '<div class="sp-box"><div class="k">💵 活期可用</div><div class="v" style="color:var(--green)">¥' + money(s.balance) + '</div></div>' +
+          '<div class="sp-box"><div class="k">📜 存单本金</div><div class="v" style="color:var(--brand)">¥' + money(s.deposit) + '</div></div>' +
+        '</div>' +
+        '<div class="acct-foot">' +
+          '<span>账户合计（活期 + 存单）</span>' +
+          '<span class="mini-acts">' +
+            '<button class="act" data-aact="transfer">转账</button>' +
+            '<button class="act" data-aact="edit">编辑</button>' +
+            '<button class="act del" data-aact="del">删除</button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    });
+    box.innerHTML = html;
+    renderTx();
+  }
+
+  function renderTx(){
+    var box = $('txList');
+    if(!state.transfers.length){
+      box.innerHTML = '<div class="dp-title">暂无流水<span>转账或存单到期后自动记录</span></div>';
+      return;
+    }
+    var html = '<div class="dp-title">最近记录<span>共 ' + state.transfers.length + ' 条</span></div>';
+    state.transfers.slice(0, 15).forEach(function(tx){
+      var to = getAcct(tx.to), from = getAcct(tx.from);
+      var d = new Date(tx.time);
+      var tstr = (d.getMonth()+1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      var title = tx.auto
+        ? '存单到期入账 → ' + (to ? to.name : '已删除账户')
+        : (from ? from.name : '外部') + ' → ' + (to ? to.name : '已删除账户');
+      html += '<div class="tx-item">' +
+        '<div><div class="t1">' + esc(title) + '</div>' +
+        '<div class="t2">' + tstr + (tx.note ? ' · ' + esc(tx.note) : '') + '</div></div>' +
+        '<div class="tx-amt in">+' + money(tx.amount) + '</div>' +
+      '</div>';
+    });
+    box.innerHTML = html;
+  }
+
+  /* ================= 存单表单 ================= */
+  function fillAcctSelect(sel, value){
+    var opts = '';
+    state.accounts.forEach(function(a){
+      opts += '<option value="' + a.id + '">' + esc(a.name) + (a.no ? '（' + esc(a.no) + '）' : '') + '</option>';
+    });
+    sel.innerHTML = opts || '<option value="">请先添加银行账户</option>';
+    if(value) sel.value = value;
+  }
+
+  function openCdForm(item){
+    state.editingCd = item ? item.id : null;
+    $('cdTitle').textContent = item ? '编辑存单' : '添加存单';
+    fillAcctSelect($('fAcct'), item ? item.accountId : (state.accounts[0] && state.accounts[0].id));
+
+    $('fBank').value = item ? item.bank : '';
+    $('fAmt').value = item ? item.amount : '';
+    $('fRate').value = item ? item.rate : '';
+    $('fStart').value = item ? item.start : fmtDate(today());
+    $('fType').value = item ? (item.type || '定期存款') : '定期存款';
+    $('fNote').value = item ? (item.note || '') : '';
+    $('fEnd').value = item ? item.end : '';
+
+    if(item){
+      var m = Number(item.termMonths) || guessTerm(item.start, item.end);
+      if(['3','6','12','24','36','60'].indexOf(String(m)) >= 0){
+        $('fTerm').value = String(m);
+        $('endField').classList.add('hidden');
+      }else{
+        $('fTerm').value = '0';
+        $('endField').classList.remove('hidden');
+      }
+    }else{
+      $('fTerm').value = '12';
+      $('endField').classList.add('hidden');
+    }
+    updateCdPreview();
+    openMask('maskCd');
+  }
+
+  function calcEnd(){
+    var term = $('fTerm').value;
+    if(term === '0') return parseDate($('fEnd').value);
+    var s = parseDate($('fStart').value);
+    if(!s) return null;
+    return addMonths(s, parseInt(term,10));
+  }
+
+  function updateCdPreview(){
+    var amt = parseFloat($('fAmt').value) || 0;
+    var rate = parseFloat($('fRate').value) || 0;
+    var start = parseDate($('fStart').value);
+    var end = calcEnd();
+    var term = parseInt($('fTerm').value, 10);
+    var months = term === 0 ? guessTerm($('fStart').value, $('fEnd').value) : term;
+    var el = $('cdPreview');
+
+    if(!amt || !start || !end || end <= start){
+      el.textContent = '填写本金、年利率与存期后，自动计算利息';
+      return;
+    }
+    var years = months / 12;
+    var interest = amt * (rate/100) * years;
+    var left = daysBetween(today(), end);
+    var leftTxt = left > 0 ? ('距到期 <b>' + left + '</b> 天') : '<b>已到期</b>';
+    el.innerHTML = '到期日 <b>' + fmtDate(end) + '</b> · 存期 <b>' + termText(months) + '</b><br>' +
+      '利息 = 本金 × 年利率 × 存期<br>= ' + moneyInt(amt) + ' × ' + rate.toFixed(2) + '% × ' + trimNum(years) + ' 年 = <b>¥' + money(interest) + '</b><br>' +
+      '到期本息 <b>¥' + money(amt + interest) + '</b> · ' + leftTxt;
+  }
+
+  function trimNum(n){ return (Math.round(n*100)/100).toString(); }
+
+  function submitCd(){
+    var bank = $('fBank').value.trim();
+    var acctId = $('fAcct').value;
+    var amt = parseFloat($('fAmt').value);
+    var rate = parseFloat($('fRate').value);
+    var start = $('fStart').value;
+    var endD = calcEnd();
+    var term = parseInt($('fTerm').value, 10);
+    var months = term === 0 ? guessTerm(start, fmtDate(endD)) : term;
+
+    if(!bank){ toast('请填写银行名称'); return; }
+    if(!acctId){ toast('请先添加银行账户'); return; }
+    if(!amt || amt <= 0){ toast('请填写正确的存款本金'); return; }
+    if(isNaN(rate) || rate < 0){ toast('请填写正确的年利率'); return; }
+    if(!start){ toast('请选择存入日期'); return; }
+    if(!endD || endD <= parseDate(start)){ toast('到期日期需晚于存入日期'); return; }
+
+    var data = {
+      id: state.editingCd || uid('cd'),
+      bank: bank, accountId: acctId,
+      amount: amt, rate: rate,
+      start: start, end: fmtDate(endD),
+      termMonths: months,
+      type: $('fType').value,
+      note: $('fNote').value.trim(),
+      settled: false
+    };
+
+    if(state.editingCd){
+      for(var i=0;i<state.deposits.length;i++){
+        if(state.deposits[i].id === state.editingCd){
+          data.settled = !!state.deposits[i].settled;
+          state.deposits[i] = data; break;
+        }
+      }
+      toast('已更新存单');
+    }else{
+      state.deposits.push(data);
+      toast('存单已添加');
+    }
+    save(); closeMask('maskCd'); renderAll();
+  }
+
+  /* ================= 账户表单 ================= */
+  function openAcctForm(a){
+    state.editingAcct = a ? a.id : null;
+    $('acctTitle').textContent = a ? '编辑银行账户' : '添加银行账户';
+    $('aName').value = a ? a.name : '';
+    $('aBank').value = a ? (a.bank || '') : '';
+    $('aNo').value = a ? (a.no || '') : '';
+    $('aBal').value = a ? a.balance : '';
+    $('delAcctBtn').classList.toggle('hidden', !a);
+    openMask('maskAcct');
+  }
+
+  function submitAcct(){
+    var name = $('aName').value.trim();
+    var bank = $('aBank').value.trim() || name;
+    var bal = parseFloat($('aBal').value) || 0;
+    if(!name){ toast('请填写账户名称'); return; }
+
+    if(state.editingAcct){
+      var a = getAcct(state.editingAcct);
+      if(a){
+        a.name = name; a.bank = bank;
+        a.no = $('aNo').value.trim();
+        a.balance = bal;
+      }
+      toast('账户已更新');
+    }else{
+      state.accounts.push({ id: uid('acct'), name: name, bank: bank, no: $('aNo').value.trim(), balance: bal });
+      toast('账户已添加');
+    }
+    save(); closeMask('maskAcct'); renderAll();
+  }
+
+  function delAcct(id){
+    var a = getAcct(id);
+    if(!a) return;
+    var used = state.deposits.filter(function(d){ return d.accountId === id; });
+    if(used.length){
+      toast('该账户下还有 ' + used.length + ' 张存单，请先转移或删除');
+      return;
+    }
+    if(!confirm('确定删除账户「' + a.name + '」吗？活期余额将一并清除。')) return;
+    state.accounts = state.accounts.filter(function(x){ return x.id !== id; });
+    save(); closeMask('maskAcct'); renderAll(); toast('账户已删除');
+  }
+
+  /* ================= 转账 ================= */
+  function openTx(fromId){
+    if(state.accounts.length < 2){ toast('至少需要 2 个账户才能转账'); return; }
+    fillAcctSelect($('tFrom'), fromId);
+    fillAcctSelect($('tTo'), null);
+    var from = $('tFrom').value;
+    for(var i=0;i<state.accounts.length;i++){
+      if(state.accounts[i].id !== from){ $('tTo').value = state.accounts[i].id; break; }
+    }
+    $('tAmt').value = '';
+    $('tNote').value = '';
+    updateTxPreview();
+    openMask('maskTx');
+  }
+
+  function updateTxPreview(){
+    var from = getAcct($('tFrom').value), to = getAcct($('tTo').value);
+    var amt = parseFloat($('tAmt').value) || 0;
+    var el = $('txPreview');
+    if(!from || !to){ el.textContent = '选择转出与转入账户'; return; }
+    if(from.id === to.id){
+      el.innerHTML = '<span style="color:var(--red)">转出与转入不能是同一账户</span>';
+      return;
+    }
+    var nb = (Number(from.balance)||0) - amt;
+    el.innerHTML = '转出后 <b>' + esc(from.name) + '</b> 活期：<b style="color:' + (nb < 0 ? 'var(--red)' : 'inherit') + '">¥' + money(nb) + '</b><br>' +
+      '转入后 <b>' + esc(to.name) + '</b> 活期：<b>¥' + money((Number(to.balance)||0) + amt) + '</b>';
+  }
+
+  function submitTx(){
+    var from = getAcct($('tFrom').value), to = getAcct($('tTo').value);
+    var amt = parseFloat($('tAmt').value);
+    if(!from || !to) return;
+    if(from.id === to.id){ toast('转出与转入不能是同一账户'); return; }
+    if(!amt || amt <= 0){ toast('请填写正确的转账金额'); return; }
+    if(amt > (Number(from.balance)||0)){ toast('余额不足：' + from.name + ' 活期仅 ¥' + money(from.balance)); return; }
+
+    from.balance = (Number(from.balance)||0) - amt;
+    to.balance = (Number(to.balance)||0) + amt;
+    state.transfers.unshift({
+      id: uid('tx'), from: from.id, to: to.id, amount: amt,
+      note: $('tNote').value.trim(), time: Date.now()
+    });
+    save(); closeMask('maskTx'); renderAll();
+    toast('已转账 ¥' + money(amt) + ' 到 ' + to.name);
+  }
+
+  /* ================= 到期自动入账 ================= */
+  function settleAll(){
+    var changed = false;
+    var now = today();
+    state.deposits.forEach(function(d){
+      if(d.settled) return;
+      var end = parseDate(d.end);
+      if(!end || daysBetween(end, now) < 0) return;
+      var acct = getAcct(d.accountId);
+      if(!acct) return;               // 账户被删则暂不入账
+      var c = compute(d);
+      acct.balance = (Number(acct.balance)||0) + c.matures;
+      d.settled = true;
+      d.settledAt = fmtDate(now);
+      state.transfers.unshift({
+        id: uid('tx'), from: null, to: acct.id, amount: c.matures,
+        note: d.bank + ' ' + (d.type||'存单') + ' 到期本息', time: Date.now(), auto: true
+      });
+      changed = true;
+    });
+    if(changed) save();
+    return changed;
+  }
+
+  /* ================= 弹窗 ================= */
+  function openMask(id){ $(id).classList.add('show'); document.body.style.overflow = 'hidden'; }
+  function closeMask(id){ $(id).classList.remove('show'); document.body.style.overflow = ''; }
+
+  function renderAll(){
+    renderSummary();
+    renderList();
+    renderCalendar();
+    renderAccounts();
+    var f = $('fabBtn');
+    if(state.tab === 'acct'){ f.textContent = '＋ 添加银行账户'; f.classList.remove('hidden'); }
+    else if(state.tab === 'list'){ f.textContent = '＋ 添加存单'; f.classList.remove('hidden'); }
+    else { f.classList.add('hidden'); }
+  }
+
+  /* ================= 事件 ================= */
+  var tabBtns = document.querySelectorAll('.tabs .tab');
+  for(var ti=0; ti<tabBtns.length; ti++){
+    tabBtns[ti].addEventListener('click', function(){
+      for(var i=0;i<tabBtns.length;i++) tabBtns[i].classList.remove('on');
+      this.classList.add('on');
+      state.tab = this.dataset.t;
+      $('page-list').classList.toggle('hidden', state.tab !== 'list');
+      $('page-cal').classList.toggle('hidden', state.tab !== 'cal');
+      $('page-acct').classList.toggle('hidden', state.tab !== 'acct');
+      renderAll();
+    });
+  }
+
+  $('fabBtn').addEventListener('click', function(){
+    if(state.tab === 'acct') openAcctForm(null);
+    else openCdForm(null);
+  });
+
+  $('addAcctBtn').addEventListener('click', function(){ openAcctForm(null); });
+
+  var closers = document.querySelectorAll('[data-close]');
+  for(var ci=0; ci<closers.length; ci++){
+    (function(b){ b.addEventListener('click', function(){ closeMask(b.dataset.close); }); })(closers[ci]);
+  }
+  ['maskCd','maskAcct','maskTx'].forEach(function(id){
+    $(id).addEventListener('click', function(e){ if(e.target === $(id)) closeMask(id); });
+  });
+
+  ['fAmt','fRate','fStart','fEnd','fTerm'].forEach(function(id){
+    var el = $(id);
+    el.addEventListener('input', updateCdPreview);
+    el.addEventListener('change', function(){
+      if(id === 'fTerm'){
+        if($('fTerm').value === '0'){
+          $('endField').classList.remove('hidden');
+          if(!$('fEnd').value){
+            var base = parseDate($('fStart').value) || today();
+            $('fEnd').value = fmtDate(addMonths(base, 12));
+          }
+        }else{
+          $('endField').classList.add('hidden');
+        }
+      }
+      updateCdPreview();
+    });
+  });
+  $('saveCdBtn').addEventListener('click', submitCd);
+
+  $('saveAcctBtn').addEventListener('click', submitAcct);
+  $('delAcctBtn').addEventListener('click', function(){ if(state.editingAcct) delAcct(state.editingAcct); });
+
+  $('tFrom').addEventListener('change', updateTxPreview);
+  $('tTo').addEventListener('change', updateTxPreview);
+  $('tAmt').addEventListener('input', updateTxPreview);
+  $('saveTxBtn').addEventListener('click', submitTx);
+
+  $('filters').addEventListener('click', function(e){
+    var b = e.target.closest('.chip');
+    if(!b) return;
+    var chips = this.querySelectorAll('.chip');
+    for(var i=0;i<chips.length;i++) chips[i].classList.remove('on');
+    b.classList.add('on');
+    state.filter = b.dataset.f;
+    renderList();
+  });
+
+  $('list').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-act]');
+    if(!btn) return;
+    var id = btn.closest('.cd').dataset.id;
+    var item = null;
+    for(var i=0;i<state.deposits.length;i++) if(state.deposits[i].id === id) item = state.deposits[i];
+    if(!item) return;
+
+    if(btn.dataset.act === 'edit'){
+      openCdForm(item);
+    }else if(btn.dataset.act === 'del'){
+      if(confirm('确定删除「' + item.bank + ' ¥' + moneyInt(item.amount) + '」这张存单吗？' + (item.settled ? '\n已到账的资金不会从账户中扣回。' : ''))){
+        state.deposits = state.deposits.filter(function(x){ return x.id !== id; });
+        save(); renderAll(); toast('已删除');
+      }
+    }
+  });
+
+  $('acctList').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-aact]');
+    if(!btn) return;
+    var btnId = btn.closest('.acct').dataset.id;
+    var a = getAcct(btnId);
+    if(!a) return;
+    var act = btn.dataset.aact;
+    if(act === 'edit') openAcctForm(a);
+    else if(act === 'transfer') openTx(btnId);
+    else if(act === 'del') delAcct(btnId);
+  });
+
+  function shiftMonth(delta){
+    var d = new Date(state.calYear, state.calMonth + delta, 1);
+    state.calYear = d.getFullYear();
+    state.calMonth = d.getMonth();
+    state.selDate = null;
+    renderCalendar();
+  }
+  $('prevM').addEventListener('click', function(){ shiftMonth(-1); });
+  $('nextM').addEventListener('click', function(){ shiftMonth(1); });
+  $('todayBtn').addEventListener('click', function(){
+    var t = today();
+    state.calYear = t.getFullYear();
+    state.calMonth = t.getMonth();
+    state.selDate = fmtDate(t);
+    renderCalendar();
+  });
+  $('days').addEventListener('click', function(e){
+    var d = e.target.closest('.day');
+    if(!d || d.classList.contains('other') || !d.dataset.d) return;
+    state.selDate = (state.selDate === d.dataset.d) ? null : d.dataset.d;
+    renderCalendar();
+  });
+  $('monthList').addEventListener('click', function(e){
+    var row = e.target.closest('.ms-row');
+    if(!row) return;
+    var p = row.dataset.ym.split('-');
+    state.calYear = +p[0];
+    state.calMonth = +p[1] - 1;
+    state.selDate = null;
+    renderCalendar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ================= 启动 ================= */
+  var t0 = today();
+  state.calYear = t0.getFullYear();
+  state.calMonth = t0.getMonth();
+
+  load();
+  settleAll();
+  renderAll();
+
+  setInterval(function(){
+    settleAll();
+    renderAll();
+  }, 60000);
+
+  window.__app = state;
+})();
+</script>
+</body>
+</html>
